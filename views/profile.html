@@ -4,8 +4,9 @@
 <head>
     <title>{{user.name}}님의 프로필</title>
     <style>
-        .html{
-            background-image: url(`/uploads/userBackgroundImage/{{user.backgroundImage}}`);
+        body{
+            color:white;
+            background-image: url("/uploads/userProfileImage/{{user.backgroundImage}}");
         }
         .section{
             width:100%; height:70%;
@@ -16,14 +17,13 @@
         .profileImage{
             width:50px; height:50px;
             margin-top: 150px;
-            border-radius: 10px;
+            border-radius: 25px;
         }
     </style>
 </head>
 
 <body>
     <section class="section" style="text-align: center;">
-        <div onclick="" style="text-align: left; ">배경 변경</div>
         <img src="/uploads/userProfileImage/{{user.profileImage}}" alt="프로필 이미지" class="profileImage">
         <br>
         <div>{{user.name}}</div>

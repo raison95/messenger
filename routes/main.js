@@ -4,6 +4,7 @@ const User = require('../mysql/models/user');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { route } = require('.');
 
 const router = express.Router();
 
@@ -57,13 +58,15 @@ router.route('/profile/edit/:id', isLoggedIn)
             next(error)
         }
     })
-    .post(upload.single('profileImage'), async (req, res,next) => {
+    .post(upload.fields([{ name: 'profileImage' }, { name: 'backgroundImage' }]), async (req, res, next) => {
         const id = parseInt(req.params.id)
 
-        const { filename: profileImage } = req.file
+        const { filename: profileImage } = req.files.profileImage[0]
+        const { filename: backgroundImage } = req.files.backgroundImage[0]
         const { name, profileMessage } = req.body
+
         try {
-            const user = await User.update({ name, profileMessage, profileImage }, { where: { id } });
+            const user = await User.update({ name, profileMessage, profileImage, backgroundImage }, { where: { id } });
             if (!user) return res.send('Server Error');
             res.render('profileEdit.html', { user });
         } catch (error) {
@@ -71,7 +74,7 @@ router.route('/profile/edit/:id', isLoggedIn)
             next(error)
         }
     })
-    
+
 router.route('/friend', isLoggedIn)
     .get((req, res, next) => {
         res.render('newFriend.html');
@@ -88,5 +91,27 @@ router.route('/friend', isLoggedIn)
         }
     })
 
+router.get('/chat', isLoggedIn, async (req, res, next) => {
+    try {
+        const user = await User.findOne({ where: { id: req.user.id } });
+        if (!user) return res.send('Server Error');
+        return res.render('layout.html', { user });
+    } catch (error) {
+        console.log(error);
+        next(error)
+    }
+})
+
+
+router.get('/chat/:id', isLoggedIn, async (req, res, next) => {
+    try {
+        const user = await User.findOne({ where: { id: req.user.id } });
+        if (!user) return res.send('Server Error');
+        return res.render('layout.html', { user });
+    } catch (error) {
+        console.log(error);
+        next(error)
+    }
+})
 
 module.exports = router;
