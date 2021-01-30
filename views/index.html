@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+    html, body { margin: 0; padding: 0; height: 100%; background-color: rgb(68, 141, 35); }
+    </style>
+    <title>Messenger</title>
+</head>
+
+<body>
+    <h1>Welcome to Messenger!</h1>
+    <hr>
+    <form action="/auth/local" method="POST">
+        <fieldset>
+            <legend>계정 로그인</legend>
+            이메일 : <input type="email" name="email"><br>
+            비밀번호 : <input type="password" name="password"><br>
+            <button type="submit">로그인</button>
+            <button type="button" onclick="location.href='/join'">회원가입</button>
+        </fieldset>  
+    </form> 
+</body>  
+
+</html>

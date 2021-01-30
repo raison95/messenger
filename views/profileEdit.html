@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>프로필 편집</title>
+    </head>
+    <body>
+        <h3>프로필 편집</h3>
+        {% if user %}
+        <form action="/main/profile/edit/{{user.id}}" method="POST" enctype="multipart/form-data">
+            <img src='/uploads/userProfileImage/{{user.profileImage}}' alt="프로필 이미지">
+            <input type="file" name="profileImage">
+            <input type="text" value="{{user.name}}" name="name">
+            <input type="text" value="{{user.profileMessage}}" name="profileMessage">
+            <button type="submit">확인</button>
+        </form>
+        {% endif %}
+    </body>
+</html>
