@@ -3,8 +3,10 @@ const { isLoggedIn } = require('./middleware');
 const User = require('../mysql/models/user');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const { route } = require('.');
+const RoomInfo = require('../mongoDB/schemas/roomInfo');
+const ChatContent = require('../mongoDB/schemas/chatContent');
+const UserChatRoom = require('../mongoDB/schemas/userChatRoom');
+
 
 const router = express.Router();
 
@@ -91,19 +93,42 @@ router.route('/friend', isLoggedIn)
         }
     })
 
-router.get('/chat', isLoggedIn, async (req, res, next) => {
-    try {
-        const user = await User.findOne({ where: { id: req.user.id } });
-        if (!user) return res.send('Server Error');
-        return res.render('layout.html', { user });
-    } catch (error) {
-        console.log(error);
-        next(error)
-    }
-})
+router.route('/chat', isLoggedIn)
+    .get(async (req, res, next) => {
+        try {
+            const user = await User.findOne({ where: { id: req.user.id } });
+            if (!user) return res.send('Server Error');
 
+            const rooms = await UserChatRoom.find({ userID: req.user.id });
+            console.log(rooms)
+            // return res.render('layout.html', { user });
+        } catch (error) {
+            console.log(error);
+            next(error)
+        }
+    })
+    .post(async (req, res, next) => {
+        try {
+            const room = await RoomInfo.create(
+                {roomName},
+                {roomImage},
+                { '$push': { 'memberID': req.user.id }, },
+            )
+            console.log(room)
+            // UserChatRoom.create(
+            //     { userID: req.user.id },
+            //     { '$push': { 'roomID': 'OS' }, },
+            // )
+            // const rooms = await UserChatRoom.find({ userID: req.user.id });
+            // console.log(rooms)
+            // return res.render('layout.html', { user });
+        } catch (error) {
+    console.log(error);
+    next(error)
+}
+    })
 
-router.get('/chat/:id', isLoggedIn, async (req, res, next) => {
+router.route('/chat/:roomId', isLoggedIn, async (req, res, next) => {
     try {
         const user = await User.findOne({ where: { id: req.user.id } });
         if (!user) return res.send('Server Error');

@@ -1,0 +1,5 @@
+mongoDB/
+mysql/
+node_modules/
+uploads/
+.env
