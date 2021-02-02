@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+    <form action="/main/newChat" method="POST" enctype="multipart/form-data">
+        <strong style="font-size: 17px;">채팅방 설정</strong><br><br>
+        채팅방 이름 : <input type="text" name="roomName"><br>
+        채팅방 사진 : <input type="file" name="roomImage"></div>
+        <hr>
+        <strong style="font-size: 17px;">대화상대 선택</strong><br><br>
+        <table>
+            <tbody>
+                {% for friend in friends %}
+                <tr>
+                    <td><img src="/uploads/userProfileImage/{{friend.profileImage}}" alt="프로필 사진" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
+                    <td><strong>{{friend.name}}</strong></td>
+                    <td><input type="checkbox" name="{{friend.id}}"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" style="float: right;">확인</button>  
+    </form>
+</body>
+</html>

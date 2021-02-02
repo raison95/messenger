@@ -51,27 +51,20 @@
     </nav>
 
     <header>
-        <h3>친구</h3>
-        <input type="search" placeholder="이름 검색"><br>
+        <h3>채팅</h3>
+        <input type="search" placeholder="채팅방 검색"><br>
         <br>
-        <span>프로필 이름</span><a onClick="window.open('/main/newFriend','_blank','left=800,top=250,height=400,width=350')" style="color:white;text-decoration:none;float:right;">친구 추가</a>
+        <a onClick="window.open('/main/newChat','_blank','left=800,top=250,height=400,width=350')" style="color:white;text-decoration:none;float:right;">채팅 추가</a>
     </header>
 
     <section>
         <table>
             <tbody>
-                <tr>
-                    <td onclick="window.open(`/main/profile/{{user.id}}`,'_blank','left=800,top=250,height=400,width=350')"><img src="/uploads/userProfileImage/{{user.profileImage}}" alt="프로필 사진" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
-                    <td><strong>{{user.name}}</strong><div>{{user.profileMessage}}</div></td>
-                </tr>
-            </tbody>
-        </table>
-        <table>
-            <tbody>
-                {% for friend in allFriends %}
-                <tr>
-                    <td onclick="window.open(`/main/profile/{{friend.id}}`,'_blank','left=800,top=250,height=400,width=350')"><img src="/uploads/userProfileImage/{{user.profileImage}}" alt="프로필 사진" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
-                    <td><strong>{{friend.name}}</strong><div>{{friend.profileMessage}}</div></td>
+                {% for room in rooms %}
+                <tr onclick="window.open(`/main/chat/{{room._id}}`,'_blank','left=700,top=100,width=500,height=700')">
+                    <td><img src="/uploads/userProfileImage/{{room.roomImage}}" alt="채팅방 이미지" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
+                    <td><strong>{{room.roomName}}</strong></td>
+                    <td style="color:rgb(78, 77, 77);">{{room["memberID"].length}}</td>
                 </tr>
                 {% endfor %}
             </tbody>

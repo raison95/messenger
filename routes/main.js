@@ -6,6 +6,7 @@ const path = require('path');
 const RoomInfo = require('../mongoDB/schemas/roomInfo');
 const ChatContent = require('../mongoDB/schemas/chatContent');
 const UserChatRoom = require('../mongoDB/schemas/userChatRoom');
+const {Op}= require("sequelize");
 
 
 const router = express.Router();
@@ -77,7 +78,7 @@ router.route('/profile/edit/:id', isLoggedIn)
         }
     })
 
-router.route('/friend', isLoggedIn)
+router.route('/newFriend', isLoggedIn)
     .get((req, res, next) => {
         res.render('newFriend.html');
     })
@@ -99,44 +100,90 @@ router.route('/chat', isLoggedIn)
             const user = await User.findOne({ where: { id: req.user.id } });
             if (!user) return res.send('Server Error');
 
-            const rooms = await UserChatRoom.find({ userID: req.user.id });
-            console.log(rooms)
-            // return res.render('layout.html', { user });
+            const { roomID: rooms } = await UserChatRoom.findOne({ userID: req.user.id }).populate('roomID');
+
+            res.render('chat.html', { rooms })
         } catch (error) {
             console.log(error);
             next(error)
         }
     })
-    .post(async (req, res, next) => {
+
+router.route('/chat/:roomID', isLoggedIn)
+    .get(async (req, res, next) => {
         try {
-            const room = await RoomInfo.create(
-                {roomName},
-                {roomImage},
-                { '$push': { 'memberID': req.user.id }, },
-            )
-            console.log(room)
-            // UserChatRoom.create(
-            //     { userID: req.user.id },
-            //     { '$push': { 'roomID': 'OS' }, },
-            // )
-            // const rooms = await UserChatRoom.find({ userID: req.user.id });
-            // console.log(rooms)
-            // return res.render('layout.html', { user });
+            const roomID = req.params.roomID;
+            const userID = req.user.id;
+
+            const room = await RoomInfo.findOne({_id:roomID});
+
+            const chats = await ChatContent
+                .find({ roomID })
+                .sort({ createdAt: 'descending' })
+                .populate('roomID');
+
+            const userList = await User.findAll({
+                where: {
+                    id: {
+                        [Op.in]: chats[0].roomID.memberID
+                    }
+                }
+            });
+
+            const users = {}
+            for(user of userList){
+                users[user.id] = user
+            }
+
+            return res.render('chatRoom.html', { room, chats, users });
         } catch (error) {
-    console.log(error);
-    next(error)
-}
+            console.log(error);
+            next(error)
+        }
     })
 
-router.route('/chat/:roomId', isLoggedIn, async (req, res, next) => {
-    try {
-        const user = await User.findOne({ where: { id: req.user.id } });
-        if (!user) return res.send('Server Error');
-        return res.render('layout.html', { user });
-    } catch (error) {
-        console.log(error);
-        next(error)
-    }
-})
+router.route('/newChat', isLoggedIn)
+    .get(async (req, res, next) => {
+        try {
+            const friends = await User.findAll({});
+            if (!friends) return res.send('Server Error');
+
+            res.render('newChat.html', { friends })
+        } catch (error) {
+            console.log(error);
+            next(error)
+        }
+    })
+    .post(upload.single('roomImage'), async (req, res, next) => {
+        try {
+            const { filename: roomImage } = req.file
+            const { roomName } = req.body
+            delete req.body.roomName
+
+            const room = await RoomInfo.create({
+                roomName,
+                roomImage,
+                memberID: Object.keys(req.body),
+            });
+
+            const rooms = await UserChatRoom.find({ userID: req.user.id });
+            if (!rooms.n) {
+                await UserChatRoom.create({
+                    userID: req.user.id,
+                    roomID: [room._id],
+                });
+            } else {
+                await UserChatRoom.updateOne({
+                    userID: req.user.id,
+                }, {
+                    $push: { roomID: room }
+                });
+            }
+            res.end()
+        } catch (error) {
+            console.log(error);
+            next(error)
+        }
+    })
 
 module.exports = router;
