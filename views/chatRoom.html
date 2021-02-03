@@ -56,6 +56,32 @@
             </tbody>
         </table>
     </section>
-    <footer></footer>
+    <footer>
+        <form action='/main/chat/{{room._id}}' method='POST' enctype="multipart/form-data">
+            <table>
+                <tbody>
+                    <tr>
+                        <td><textarea name="message" id="" cols="50" rows="5"></textarea></td>
+                        <td><button type="submit">전송</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="file" name="messageFile"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </footer>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    const socket = io.connect('http://localhost:8000', {
+      path: '/socket.io',
+    });
+    socket.on('connection',()=>{
+        console.log("hi")
+    })
+    socket.on('join',(data)=>{
+        console.log(data)
+    })
+    </script>
 </body>
 </html>

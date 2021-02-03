@@ -6,7 +6,7 @@ const path = require('path');
 const RoomInfo = require('../mongoDB/schemas/roomInfo');
 const ChatContent = require('../mongoDB/schemas/chatContent');
 const UserChatRoom = require('../mongoDB/schemas/userChatRoom');
-const {Op}= require("sequelize");
+const { Op } = require("sequelize");
 
 
 const router = express.Router();
@@ -29,7 +29,7 @@ router.get('/', isLoggedIn, async (req, res, next) => {
     try {
         const user = await User.findOne({ where: { id: req.user.id } });
         if (!user) return res.send('Server Error');
-        return res.render('layout.html', { user });
+        return res.render('main.html', { user });
     } catch (error) {
         console.log(error);
         next(error)
@@ -100,9 +100,16 @@ router.route('/chat', isLoggedIn)
             const user = await User.findOne({ where: { id: req.user.id } });
             if (!user) return res.send('Server Error');
 
-            const { roomID: rooms } = await UserChatRoom.findOne({ userID: req.user.id }).populate('roomID');
-
-            res.render('chat.html', { rooms })
+            let rooms = await UserChatRoom.findOne({ userID: req.user.id }).populate('roomID')
+            console.log(rooms)
+            if (!rooms || !rooms.roomID.length) {
+                console.log("105")
+                res.render('chat.html')
+            } else {
+                rooms = rooms.roomID
+                console.log("109")
+                res.render('chat.html', { rooms })
+            }
         } catch (error) {
             console.log(error);
             next(error)
@@ -115,23 +122,60 @@ router.route('/chat/:roomID', isLoggedIn)
             const roomID = req.params.roomID;
             const userID = req.user.id;
 
-            const room = await RoomInfo.findOne({_id:roomID});
+            const room = await RoomInfo.findOne({ _id: roomID });
 
             const chats = await ChatContent
                 .find({ roomID })
-                .sort({ createdAt: 'descending' })
+                .sort({ createdAt: 'ascending' })
                 .populate('roomID');
 
-            const userList = await User.findAll({
-                where: {
-                    id: {
-                        [Op.in]: chats[0].roomID.memberID
+            if (!chats.length) {
+                res.render('chatRoom.html', { room });
+            } else {
+                const userList = await User.findAll({
+                    where: {
+                        id: {
+                            [Op.in]: chats[chats.length - 1].roomID.memberID
+                        }
                     }
-                }
-            });
+                });
 
+                const users = {}
+                for (user of userList) {
+                    users[user.id] = user
+                }
+
+                res.render('chatRoom.html', { room, chats, users });
+            }
+        } catch (error) {
+            console.log(error);
+            next(error)
+        }
+    })
+    .post(upload.single('messageFile'),async (req, res, next) => {
+        try {
+            const roomID = req.params.roomID;
+            const userID = req.user.id;
+            const message = req.body.message;
+
+            await ChatContent.create({ roomID, userID, message })
+
+            // const userList = await RoomInfo.findAll({
+            //     where: {
+            //         id: {
+            //             [Op.in]: chats[chats.length - 1].roomID.memberID
+            //         }
+            //     }
+            // });
+            const chats = await ChatContent
+            .find({ roomID })
+            .sort({ createdAt: 'ascending' })
+            .populate('roomID');
+
+            const room = await RoomInfo.findOne({_id:roomID})
+            const userList = room.memberID
             const users = {}
-            for(user of userList){
+            for (user of userList) {
                 users[user.id] = user
             }
 
@@ -156,6 +200,12 @@ router.route('/newChat', isLoggedIn)
     })
     .post(upload.single('roomImage'), async (req, res, next) => {
         try {
+            const memberList = []
+            Object.keys(req.body).map((key) => {
+                if (key.startsWith('friend_id_')) {
+                    memberList.push(parseInt(key.substring(10)))
+                }
+            })
             const { filename: roomImage } = req.file
             const { roomName } = req.body
             delete req.body.roomName
@@ -163,23 +213,25 @@ router.route('/newChat', isLoggedIn)
             const room = await RoomInfo.create({
                 roomName,
                 roomImage,
-                memberID: Object.keys(req.body),
+                memberID: memberList,
             });
 
-            const rooms = await UserChatRoom.find({ userID: req.user.id });
-            if (!rooms.n) {
-                await UserChatRoom.create({
-                    userID: req.user.id,
-                    roomID: [room._id],
-                });
-            } else {
-                await UserChatRoom.updateOne({
-                    userID: req.user.id,
-                }, {
-                    $push: { roomID: room }
-                });
-            }
-            res.end()
+            memberList.forEach(async (member) => {
+                const rooms = await UserChatRoom.findOne({ userID: member });
+                if (!rooms) {
+                    await UserChatRoom.create({
+                        userID: member,
+                        roomID: [room._id],
+                    });
+                } else {
+                    await UserChatRoom.updateOne({
+                        userID: member,
+                    }, {
+                        $push: { roomID: room }
+                    });
+                }
+            })
+            res.send('채팅방이 생성되었습니다.')
         } catch (error) {
             console.log(error);
             next(error)

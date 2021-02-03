@@ -13,7 +13,9 @@ const mongoDBConnect = require('./mongoDB/schemas');
 const redis = require('redis');
 const passport = require('passport');
 const passportConfig = require('./passport');
-const RedisStore = require('connect-redis')(session)
+const RedisStore = require('connect-redis')(session);
+const SocketIO = require('socket.io');
+const sharedSessionMW = require("express-socket.io-session");
 
 const app = express();
 
@@ -35,15 +37,7 @@ const redisClient = redis.createClient({
     url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
     password: process.env.REDIS_PASSWORD
 });
-
-app.set('port', process.env.PORT || 8000);
-app.set('view engine', 'html');
-
-                                                    // express.json과 express.urlencoded 둘다 요청의 본문에 있는 데이터를 해석해서 req.body 객체로 만들어줌. 주로 form 데이터나 AJAX 요청의 데이터.multipart 데이터는 multer를 이용해 해석. 이외의 raw,text 형식의 데이터는 body-parser 설치후 사용.
-app.use(express.json());                            // appplication/json을 파싱.
-app.use(express.urlencoded({extended:false}));      // appplication/x-www-from-urlencoded 파싱. 폼 전송은 urlextended가 false면 querystring 모듈 사용하여 쿼리스트링 해석하고 true면 qs 모듈 사용하여 쿼리스트링 해석.
-app.use(morgan('dev'));
-app.use(session({
+const sessionMW = session({
     resave: false,
     saveUninitialized: false,
     secret: process.env.COOKIE_SECRET,
@@ -52,7 +46,16 @@ app.use(session({
       secure: false,
     },
     store: new RedisStore({client:redisClient}),
-  }));
+  })
+
+app.set('port', process.env.PORT || 8000);
+app.set('view engine', 'html');
+
+                                                    // express.json과 express.urlencoded 둘다 요청의 본문에 있는 데이터를 해석해서 req.body 객체로 만들어줌. 주로 form 데이터나 AJAX 요청의 데이터.multipart 데이터는 multer를 이용해 해석. 이외의 raw,text 형식의 데이터는 body-parser 설치후 사용.
+app.use(express.json());                            // appplication/json을 파싱.
+app.use(express.urlencoded({extended:false}));      // appplication/x-www-from-urlencoded 파싱. 폼 전송은 urlextended가 false면 querystring 모듈 사용하여 쿼리스트링 해석하고 true면 qs 모듈 사용하여 쿼리스트링 해석.
+app.use(morgan('dev'));
+app.use(sessionMW);
 app.use(passport.initialize());                     // req 객체에 passport 설정을 심음
 app.use(passport.session());                        // deserialize를 호출하여 req.session 객체에 passport 정보를 저장
 
@@ -75,6 +78,22 @@ app.use((err, req, res, next) => {
     res.render('error');
 });
 
-app.listen(app.get('port'), () => {
+const server = app.listen(app.get('port'), () => {
     console.log("listen at PORT :", app.get('port'));
 });
+
+// socket.io
+const io = SocketIO(server, { path: '/socket.io' });
+io.use(sharedSessionMW(sessionMW));
+io.on('connection', (socket) => {
+    const userID = socket.handshake.session.passport.user
+    const url = socket.request.headers.referer;
+    const roomID = url.split('/')[url.split('/').length-1]
+    const room = io.of(`/${roomID}`);
+
+    socket.join(room);
+
+    socket.emit('join',`${userID}님이 ${roomID}번방에 입장하셨습니다.`)
+  });
+
+app.set('io',io);
