@@ -9,7 +9,7 @@ const roomInfoSchema = new Schema({
         type: String
     },
     memberID:{
-        type:[Number],
+        type:[String],
         require: true,
     },
 },{versionKey:false});

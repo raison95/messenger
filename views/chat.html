@@ -62,7 +62,7 @@
             <tbody>
                 {% for room in rooms %}
                 <tr onclick="window.open(`/main/chat/{{room._id}}`,'_blank','left=700,top=100,width=500,height=700')">
-                    <td><img src="/uploads/userProfileImage/{{room.roomImage}}" alt="채팅방 이미지" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
+                    <td><img src="/uploads/{{room.roomImage}}" alt="채팅방 이미지" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
                     <td><strong>{{room.roomName}}</strong></td>
                     <td style="color:rgb(78, 77, 77);">{{room["memberID"].length}}</td>
                 </tr>

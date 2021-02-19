@@ -6,10 +6,10 @@
     <body>
         <h3>프로필 편집</h3>
         {% if user %}
-        <form action="/main/profile/edit/{{user.id}}" method="POST" enctype="multipart/form-data">
-            <div>프로필 : <img src='/uploads/userProfileImage/{{user.profileImage}}' alt="프로필 이미지" width="50px" height="50px" style="border-radius: 25px;"><input type="file" name="profileImage"></div>
+        <form action="/main/profile/edit/{{user._id}}" method="POST" enctype="multipart/form-data">
+            <div>프로필 : <img src='/uploads/{{user.profileImage}}' alt="프로필 이미지" width="50px" height="50px" style="border-radius: 25px;"><input type="file" name="profileImage"></div>
             <br>
-            <div>배경 : <img src='/uploads/userProfileImage/{{user.backgroundImage}}' alt="프로필 이미지" width="50px" height="50px" style="border-radius: 25px;"><input type="file" name="backgroundImage"></div>
+            <div>배경 : <img src='/uploads/{{user.backgroundImage}}' alt="프로필 이미지" width="50px" height="50px" style="border-radius: 25px;"><input type="file" name="backgroundImage"></div>
             <br>
             <div>
                 이름 : <input type="text" value="{{user.name}}" name="name"><br>

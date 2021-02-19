@@ -13,7 +13,7 @@
             <tbody>
                 {% for friend in friends %}
                 <tr>
-                    <td><img src="/uploads/userProfileImage/{{friend.profileImage}}" alt="프로필 사진" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
+                    <td><img src="/uploads/{{friend.profileImage}}" alt="프로필 사진" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
                     <td><strong>{{friend.name}}</strong></td>
                     <td><input type="checkbox" name="friend_id_{{friend.id}}"></td>
                 </tr>

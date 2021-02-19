@@ -2,20 +2,16 @@ const express = require('express');
 const session = require('express-session');
 const nunjucks = require('nunjucks');
 const indexRouter = require('./routes');
-const authRouter = require('./routes/auth');
-const mainRouter = require('./routes/main');
-const joinRouter = require('./routes/join');
-const uploadRouter = require('./routes/upload');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
-const { sequelize } = require('./mysql/models');
-const mongoDBConnect = require('./mongoDB/schemas');
+const mongoDBConnect = require('./models');
 const redis = require('redis');
 const passport = require('passport');
 const passportConfig = require('./passport');
 const RedisStore = require('connect-redis')(session);
 const SocketIO = require('socket.io');
 const sharedSessionMW = require("express-socket.io-session");
+const User = require('./models/user');
 
 const app = express();
 
@@ -24,13 +20,6 @@ nunjucks.configure('views', {
     express: app,
     watch: true,
 });
-sequelize.sync({ force: false })                    // db.sequelize를 불러와서 sync 메서드를 사용해 서버 실행시 MySQL과 연동. force옵션에 true면 서버 실행 시마다 테이블 재생성.
-    .then(() => {
-        console.log('MySQL 연결 성공');
-    })
-    .catch((err) => {
-        console.log(err);
-    })
 mongoDBConnect();
 passportConfig();
 const redisClient = redis.createClient({
@@ -59,11 +48,7 @@ app.use(sessionMW);
 app.use(passport.initialize());                     // req 객체에 passport 설정을 심음
 app.use(passport.session());                        // deserialize를 호출하여 req.session 객체에 passport 정보를 저장
 
-app.use('/', indexRouter);
-app.use('/join', joinRouter);
-app.use('/auth', authRouter);
-app.use('/main', mainRouter);
-app.use('/uploads', uploadRouter);
+app.use(indexRouter);
 
 app.use((req, res, next) => {
     const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
@@ -83,17 +68,22 @@ const server = app.listen(app.get('port'), () => {
 });
 
 // socket.io
-const io = SocketIO(server, { path: '/socket.io' });
+const io = SocketIO(server);
+
 io.use(sharedSessionMW(sessionMW));
-io.on('connection', (socket) => {
-    const userID = socket.handshake.session.passport.user
-    const url = socket.request.headers.referer;
-    const roomID = url.split('/')[url.split('/').length-1]
-    const room = io.of(`/${roomID}`);
 
-    socket.join(room);
+io.on('connection', async(socket)=>{
+  const userID = socket.handshake.session.passport.user
+  const url = socket.request.headers.referer;
+  const roomID = url.split('/')[url.split('/').length-1]
+  
+  const {name: userName} = await User
+    .findOne({ _id: userID })
+    .select('name');
 
-    socket.emit('join',`${userID}님이 ${roomID}번방에 입장하셨습니다.`)
-  });
+  socket.join(roomID);
+
+  io.to(roomID).emit('Join',userName);
+})
 
 app.set('io',io);

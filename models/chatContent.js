@@ -8,8 +8,9 @@ const chatContentSchema = new Schema({
         ref: 'RoomInfo',
     },
     userID:{
-        type: Number,
+        type: Schema.Types.ObjectId,
         required: true,
+        ref: 'User'
     },
     message:{
         type: String,

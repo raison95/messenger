@@ -27,17 +27,19 @@
 <body>
     <form action="/main/newFriend" method="POST">
         <input type="search" placeholder="이메일 검색" class="search" name="email">
-        <input type="submit" value="찾기">
+        <button type="submit">찾기</button>
+        <hr>
     </form>
-    <hr>
     <table>
         <tbody>
             {% if user %}
-            <tr>
-                <td class="image"><img src="/uploads/userProfileImage/{{user.profileImage}}" alt="프로필 이미지" class="profileImage"></td>
-                <td><strong>{{user.name}}</strong><div>{{user.profileMessage}}</div></td>
-                <td><button type="button">추가</button></td>
-            </tr>
+            <form action="/main/newFriend/{{user._id}}" method="POST">
+                <tr>
+                    <td class="image"><img src="/uploads/{{user.profileImage}}" alt="프로필 이미지" class="profileImage"></td>
+                    <td><strong>{{user.name}}</strong><div>{{user.profileMessage}}</div></td>
+                    <td><button type="submit">추가</button></td>
+                </tr>
+            </form> 
             {% endif %}
         </tbody>
     </table>

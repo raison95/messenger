@@ -5,24 +5,28 @@
     <meta charset="UTF-8">
     <title>messenger</title>
     <style>
-        html, body{
+        html,
+        body {
             margin: 0;
             padding: 0;
             height: 100%;
             background: black;
             color: black;
         }
+
         header {
             width: 100%;
             height: 15%;
             background: rgb(2, 124, 43);
         }
-        section{
+
+        section {
             width: 100%;
             height: 65%;
             float: right;
             background: rgb(101, 160, 118);
         }
+
         footer {
             width: 100%;
             height: 20%;
@@ -31,12 +35,14 @@
         }
     </style>
 </head>
+
 <body>
-    <header>
+    <header data-my-id="{{myID}}">
         <table>
             <tbody>
                 <tr>
-                    <td><img src="/uploads/userProfileImage/{{room.roomImage}}" alt="채팅방 이미지" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
+                    <td><img src="/uploads/{{room.roomImage}}" alt="채팅방 이미지"
+                            style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
                     <td><strong>{{room.roomName}}</strong></td>
                     <td style="color:rgb(78, 77, 77);">{{room.memberID.length}}</td>
                 </tr>
@@ -48,8 +54,11 @@
             <tbody>
                 {% for chat in chats %}
                 <tr>
-                    <td><img src="/uploads/userProfileImage/{{users[chat.userID].profileImage}}" alt="프로필 사진" style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
-                    <td><strong>{{users[chat.userID].name}}</strong><div style="background-color: white;">{{chat.message}}</div></td>
+                    <td><img src="/uploads/{{users[chat.userID].profileImage}}" alt="프로필 사진"
+                            style="width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"></td>
+                    <td><strong>{{users[chat.userID].name}}</strong>
+                        <div style="background-color: white;">{{chat.message}}</div>
+                    </td>
                     <td style="font-size: 0.5em;">{{chat.createdAt.getHours()}}시 {{chat.createdAt.getMinutes()}}분</td>
                 </tr>
                 {% endfor %}
@@ -57,7 +66,7 @@
         </table>
     </section>
     <footer>
-        <form action='/main/chat/{{room._id}}' method='POST' enctype="multipart/form-data">
+        <form name="chatAjax" action='/main/chat/{{room._id}}' method='POST' enctype="multipart/form-data">
             <table>
                 <tbody>
                     <tr>
@@ -71,17 +80,84 @@
             </table>
         </form>
     </footer>
+    <script>
+        const chatForm = document.forms['chatAjax'];
+        const chatText = document.querySelector('textarea');
+        chatText.addEventListener('keydown', (event) => {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                var formData = new FormData(chatForm);
+                chatForm.reset()
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', window.location.href);
+                xhr.send(formData);
+            }
+        })
+        chatForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var formData = new FormData(chatForm);
+            chatForm.reset()
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', window.location.href);
+            xhr.send(formData);
+        });
+    </script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-    const socket = io.connect('http://localhost:8000', {
-      path: '/socket.io',
-    });
-    socket.on('connection',()=>{
-        console.log("hi")
-    })
-    socket.on('join',(data)=>{
-        console.log(chat)
-    })
+        const socket = io('http://localhost:8000/');
+        socket.on('connect', () => {
+            console.log('소켓 연결')
+        })
+        socket.on('Join', (userName) => {
+            console.log(`${userName}님이 채팅방에 입장하셨습니다`)
+        })
+        socket.on('Chat', (chatData) => {
+            const { data, userName, profileImage, userID } = chatData;
+            const header = document.querySelector('header');
+            const MyID = header.dataset.myId
+
+            const tr = document.createElement('tr');
+
+            let td = document.createElement('td');
+            const img = document.createElement('img');
+            img.src = `/uploads/${profileImage}`;
+            img.alt = "프로필 사진";
+            img.style = "width: 50px;height: 50px;border-radius: 25px; margin-top:8px;"
+            td.appendChild(img);
+            tr.appendChild(td);
+
+            td = document.createElement('td');
+            const strong = document.createElement('strong');
+            const div = document.createElement('div');
+            div.textContent = userName;
+            strong.appendChild(div);
+            td.appendChild(strong);
+            tr.appendChild(td);
+            if (data.file) {
+                const img = document.createElement('img');
+                img.src = `/uploads/${data.file.filename}`;
+                img.alt = "채팅 사진";
+                img.style = "width: 100px;height: 100px; border-radius: 3px"
+                td.appendChild(img);
+            }
+            if (data.message) {
+                const div = document.createElement('div');
+                if (MyID === userID) div.style = "color:black; background-color: yellow;"
+                else div.style = "color:black; background-color: white;"
+                div.textContent = data.message;
+                td.appendChild(div);
+            }
+            tr.appendChild(td);
+
+            td = document.createElement('td');
+            td.style = "font-size: 0.5em;";
+            let today = new Date();
+            td.textContent = today.getHours() + '시' + ' ' + today.getMinutes() + '분';
+            tr.appendChild(td);
+
+            document.querySelector('section table tbody').appendChild(tr);
+        })
     </script>
 </body>
+
 </html>
